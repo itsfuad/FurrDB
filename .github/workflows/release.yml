@@ -1,21 +1,39 @@
-name: Release on Stable
+name: Release
 
 on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
   push:
     branches:
       - stable
+    tags:
+      - v*
+
+permissions:
+  contents: write
 
 jobs:
-  test-and-release:
+  release:
+    if: |
+      (github.event.workflow_run.conclusion == 'success' && github.event_name == 'workflow_run') ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.23'
 
       - name: Check formatting (go fmt)
         run: |
@@ -26,22 +44,34 @@ jobs:
             exit 1
           fi
 
-      - name: Run tests
-        run: go test ./...
-
-      - name: Set up QEMU (for cross-compiling)
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up GoReleaser
-        uses: goreleaser/goreleaser-action@v5
-        with:
-          version: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run GoReleaser (release on success)
-        if: success()
+      - name: Build for Multiple Platforms
         run: |
-          goreleaser release --clean --skip-validate
+          mkdir -p releases
+          PLATFORMS=("windows/amd64" "linux/amd64" "darwin/amd64" "darwin/arm64")
+          for platform in "${PLATFORMS[@]}"; do
+            OS=${platform%/*}
+            ARCH=${platform#*/}
+            output_name="releases/furrdb-${OS}-${ARCH}"
+            if [ $OS = "windows" ]; then
+              output_name="$output_name.exe"
+            fi
+            GOOS=$OS GOARCH=$ARCH go build -o "$output_name" ./cmd/furrdb
+          done
+
+      - name: Generate Next Version
+        id: semver
+        uses: mathieudutour/github-tag-action@v6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          dry_run: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.semver.outputs.new_tag }}
+          name: Release ${{ steps.semver.outputs.new_tag }}
+          body: ${{ steps.semver.outputs.changelog }}
+          files: |
+            releases/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
