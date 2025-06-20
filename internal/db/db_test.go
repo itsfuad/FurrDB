@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	TEST_FILE = "test_dump.rdb"
+)
+
 func TestStoreBasicOps(t *testing.T) {
 	db := NewStore()
 	db.mu.Lock()
@@ -127,7 +131,7 @@ func TestSnapshotSaveLoad(t *testing.T) {
 	_, _ = saddHandler([]string{"snapset", "a", "b"})
 	_, _ = expireHandler([]string{"snapkey", "10"})
 
-	err := SaveSnapshot("test_dump.rdb")
+	err := SaveSnapshot(TEST_FILE)
 	if err != nil {
 		t.Fatalf("SaveSnapshot failed: %v", err)
 	}
@@ -139,7 +143,7 @@ func TestSnapshotSaveLoad(t *testing.T) {
 		t.Errorf("expected empty after clear, got %s", val)
 	}
 
-	err = LoadSnapshot("test_dump.rdb")
+	err = LoadSnapshot(TEST_FILE)
 	if err != nil {
 		t.Fatalf("LoadSnapshot failed: %v", err)
 	}
@@ -151,5 +155,5 @@ func TestSnapshotSaveLoad(t *testing.T) {
 	if !(strings.Contains(members, "a") && strings.Contains(members, "b")) {
 		t.Errorf("expected set members a and b, got %s", members)
 	}
-	_ = os.Remove("test_dump.rdb")
+	_ = os.Remove(TEST_FILE)
 }

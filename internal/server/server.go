@@ -35,38 +35,48 @@ func handleConn(conn net.Conn) {
 		if err != nil {
 			return
 		}
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		tokens := strings.Fields(line)
+		
+		tokens := parseInput(line)
 		if len(tokens) == 0 {
 			continue
 		}
+		
 		cmd := strings.ToUpper(tokens[0])
 		args := tokens[1:]
-		var resp string
-		switch cmd {
-		case "PING":
-			resp = "PONG"
-		case "EXIT":
+		
+		if cmd == "EXIT" {
 			w.WriteString("BYE\n")
 			w.Flush()
 			return
-		default:
-			handler, ok := db.Commands[cmd]
-			if !ok {
-				resp = "ERR unknown command"
-			} else {
-				result, err := handler(args)
-				if err != nil {
-					resp = "ERR " + err.Error()
-				} else {
-					resp = result
-				}
-			}
 		}
+		
+		resp := processCommand(cmd, args)
 		w.WriteString(resp + "\n")
 		w.Flush()
 	}
+}
+
+func parseInput(line string) []string {
+	line = strings.TrimSpace(line)
+	if line == "" {
+		return nil
+	}
+	return strings.Fields(line)
+}
+
+func processCommand(cmd string, args []string) string {
+	if cmd == "PING" {
+		return "PONG"
+	}
+	
+	handler, ok := db.Commands[cmd]
+	if !ok {
+		return "ERR unknown command"
+	}
+	
+	result, err := handler(args)
+	if err != nil {
+		return "ERR " + err.Error()
+	}
+	return result
 }
