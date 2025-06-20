@@ -58,25 +58,25 @@ func handleLetStatement(line string, lineNum int, whitelist map[string]bool, var
 	if len(parts) < 5 || parts[2] != "=" {
 		return "", fmt.Errorf("ERR invalid LET syntax on line %d", lineNum)
 	}
-	
+
 	varName := parts[1]
 	cmd := strings.ToUpper(parts[3])
 	cmdArgs := parts[4:]
-	
+
 	if !whitelist[cmd] {
 		return "", fmt.Errorf("ERR command %s not allowed in LET on line %d", cmd, lineNum)
 	}
-	
+
 	handler, ok := db.Commands[cmd]
 	if !ok {
 		return "", fmt.Errorf("ERR unknown command '%s' in LET on line %d", cmd, lineNum)
 	}
-	
+
 	result, err := handler(cmdArgs)
 	if err != nil {
 		return "", fmt.Errorf("ERR %v on line %d", err, lineNum)
 	}
-	
+
 	vars[varName] = result
 	return result, nil
 }
@@ -87,10 +87,10 @@ func handleIfStatement(line string, lineNum int, vars map[string]string) (int, e
 	if len(parts) != 4 || parts[2] != "==" {
 		return 0, fmt.Errorf("ERR invalid IF syntax on line %d", lineNum)
 	}
-	
+
 	varName := parts[1]
 	expected := parts[3]
-	
+
 	if vars[varName] != expected {
 		return 1, nil
 	}
@@ -103,24 +103,24 @@ func executeCommand(line string, lineNum int, whitelist map[string]bool) (string
 	if len(tokens) == 0 {
 		return "", nil
 	}
-	
+
 	cmd := strings.ToUpper(tokens[0])
 	params := tokens[1:]
-	
+
 	if !whitelist[cmd] {
 		return "", fmt.Errorf("ERR command %s not allowed in script on line %d", cmd, lineNum)
 	}
-	
+
 	handler, ok := db.Commands[cmd]
 	if !ok {
 		return "", fmt.Errorf("ERR unknown command '%s' on line %d", cmd, lineNum)
 	}
-	
+
 	result, err := handler(params)
 	if err != nil {
 		return "", fmt.Errorf("ERR %v on line %d", err, lineNum)
 	}
-	
+
 	return result, nil
 }
 
@@ -128,54 +128,49 @@ func evalScriptLines(script string) (string, error) {
 	lines := strings.Split(script, ";")
 	vars := make(map[string]string)
 	var last string
-	
-	maxLines := 100
+
+	const maxLines = 100
 	if len(lines) > maxLines {
 		return "", fmt.Errorf("ERR script too long (max %d lines)", maxLines)
 	}
-	
+
 	whitelist := getWhitelist()
-	var skipToEnd int // 0=not skipping, >0=inside nested IFs
-	
+	var skipToEnd int
+
 	for i, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		
 		if skipToEnd > 0 {
 			skipToEnd = handleSkipping(line, skipToEnd)
 			continue
 		}
-		
-		if strings.HasPrefix(line, "LET ") {
-			result, err := handleLetStatement(line, i+1, whitelist, vars)
-			if err != nil {
-				return "", err
-			}
-			last = result
-			
-		} else if strings.HasPrefix(line, "IF ") {
-			skip, err := handleIfStatement(line, i+1, vars)
-			if err != nil {
-				return "", err
-			}
+		result, skip, err := evalScriptLine(line, i+1, whitelist, vars)
+		if err != nil {
+			return "", err
+		}
+		if skip > 0 {
 			skipToEnd = skip
-			
-		} else if line == "END" {
 			continue
-			
-		} else {
-			// Normal DB command
-			result, err := executeCommand(line, i+1, whitelist)
-			if err != nil {
-				return "", err
-			}
-			if result != "" {
-				last = result
-			}
+		}
+		if result != "" {
+			last = result
 		}
 	}
-	
 	return last, nil
+}
+
+func evalScriptLine(line string, lineNum int, whitelist map[string]bool, vars map[string]string) (result string, skip int, err error) {
+	switch {
+	case strings.HasPrefix(line, "LET "):
+		result, err = handleLetStatement(line, lineNum, whitelist, vars)
+	case strings.HasPrefix(line, "IF "):
+		skip, err = handleIfStatement(line, lineNum, vars)
+	case line == "END":
+		// nothing to do
+	default:
+		result, err = executeCommand(line, lineNum, whitelist)
+	}
+	return
 }
