@@ -34,11 +34,11 @@ jobs:
           for platform in "${PLATFORMS[@]}"; do
             OS=${platform%/*}
             ARCH=${platform#*/}
-            output_name="releases/tinyass-${OS}-${ARCH}"
+            output_name="releases/furrdb-${OS}-${ARCH}"
             if [ $OS = "windows" ]; then
               output_name="$output_name.exe"
             fi
-            GOOS=$OS GOARCH=$ARCH go build -o "$output_name" .
+            GOOS=$OS GOARCH=$ARCH go build -o "$output_name" ./cmd/furrdb
           done
 
       - name: Generate Next Version
