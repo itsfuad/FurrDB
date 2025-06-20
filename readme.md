@@ -28,26 +28,6 @@
 
 ---
 
-## 🏗️ Project Structure
-
-```
-furrdb/
-├── cmd/
-│   └── furrdb/      # Main server entrypoint
-├── client/          # CLI client (minidb-cli)
-├── internal/
-│   ├── db/          # In-memory data store and command handlers
-│   ├── engine/      # Persistence engine (AOF-based)
-│   ├── server/      # TCP listener and protocol parser
-│   ├── script/      # Script registration, hashing, execution
-│   ├── repl/        # Optional local REPL shell
-│   └── utils/       # Logging, hashing, and helper functions
-├── scripts/         # Sample scripts for testing
-├── testdata/        # Persistence and input test files
-├── go.mod
-└── README.md
-```
-
 ---
 
 ## 🧠 Architecture Overview
