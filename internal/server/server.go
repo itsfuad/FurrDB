@@ -35,21 +35,21 @@ func handleConn(conn net.Conn) {
 		if err != nil {
 			return
 		}
-		
+
 		tokens := parseInput(line)
 		if len(tokens) == 0 {
 			continue
 		}
-		
+
 		cmd := strings.ToUpper(tokens[0])
 		args := tokens[1:]
-		
+
 		if cmd == "EXIT" {
 			w.WriteString("BYE\n")
 			w.Flush()
 			return
 		}
-		
+
 		resp := processCommand(cmd, args)
 		w.WriteString(resp + "\n")
 		w.Flush()
@@ -68,12 +68,12 @@ func processCommand(cmd string, args []string) string {
 	if cmd == "PING" {
 		return "PONG"
 	}
-	
+
 	handler, ok := db.Commands[cmd]
 	if !ok {
 		return "ERR unknown command"
 	}
-	
+
 	result, err := handler(args)
 	if err != nil {
 		return "ERR " + err.Error()
