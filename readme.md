@@ -249,12 +249,5 @@ Future config may support `.env` or flags.
 
 ---
 
-## 🧑‍💻 Author
-
-Made by [@Fuad Hasan](https://github.com/fuadhasan) for educational and performance-tuning fun.
-
----
-
 ## 📝 License
-
-MIT License — Use freely, modify, distribute.
+GNU GENERAL PUBLIC LICENSE
