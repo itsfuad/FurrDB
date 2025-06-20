@@ -17,14 +17,14 @@
 
 - [x] In-memory key-value store
 - [x] TCP server with custom text protocol
-- [x] Command set: `SET`, `GET`, `DEL`, `EXISTS`, `PING`, `EVAL`, `REGSCRIPT`, `RUNSCRIPT`
+- [x] Command set: `SET`, `GET`, `DEL`, `EXISTS`, `PING`, `EVAL`, `REGSCRIPT`, `RUNSCRIPT`, `EXPIRE`, `TTL`, `SNAPSHOT`
 - [x] Append-only persistence log
 - [x] Script registration and hash-based invocation
 - [x] Basic CLI client
 - [x] REPL (local interactive shell)
-- [ ] TTL expiration (planned)
-- [ ] Snapshot-based persistence (planned)
-- [ ] Scripting sandbox (planned with embedded DSL)
+- [x] TTL expiration
+- [x] Snapshot-based persistence
+- [x] Scripting sandbox (embedded DSL: LET, IF, END)
 
 ---
 
@@ -155,7 +155,7 @@ INFO        # returns keys:<count>
 
 ## 🔐 Scripts
 
-FurrDB supports a **basic script runner**.
+FurrDB supports a **basic script runner** and a minimal embedded DSL for scripting.
 
 - Register a script:
   ```
@@ -170,6 +170,20 @@ Script engine features:
 - Line-by-line command interpretation
 - Sequential execution
 - Shared context with DB store
+- **Embedded DSL:**
+  - Variable assignment: `LET x = GET foo`
+  - Conditionals: `IF x == bar ... END`
+  - Only whitelisted commands allowed in scripts (sandboxed)
+  - Script length limit for safety
+
+**DSL Example:**
+```
+LET x = GET foo;
+IF x == bar;
+  SET foo baz;
+END;
+GET foo
+```
 
 ---
 

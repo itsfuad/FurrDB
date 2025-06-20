@@ -1,10 +1,13 @@
 package db
 
 import (
+	"encoding/gob"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 	"sync"
+	"time"
 )
 
 type valueType int
@@ -19,13 +22,17 @@ type Store struct {
 	mu    sync.RWMutex
 	data  map[string]any
 	types map[string]valueType
+	ttl   map[string]int64 // key -> unix expiration, 0 means no expiry
 }
 
 func NewStore() *Store {
-	return &Store{
+	store := &Store{
 		data:  make(map[string]any),
 		types: make(map[string]valueType),
+		ttl:   make(map[string]int64),
 	}
+	go store.ttlCleaner()
+	return store
 }
 
 var DefaultStore = NewStore()
@@ -48,6 +55,33 @@ var Commands = map[string]HandlerFunc{
 	"KEYS":     keysHandler,
 	"FLUSHDB":  flushdbHandler,
 	"INFO":     infoHandler,
+	"EXPIRE":   expireHandler,
+	"TTL":      ttlHandler,
+	"SNAPSHOT": snapshotHandler,
+}
+
+func (s *Store) ttlCleaner() {
+	for {
+		time.Sleep(1 * time.Second)
+		s.mu.Lock()
+		now := time.Now().Unix()
+		for k, exp := range s.ttl {
+			if exp > 0 && exp <= now {
+				delete(s.data, k)
+				delete(s.types, k)
+				delete(s.ttl, k)
+			}
+		}
+		s.mu.Unlock()
+	}
+}
+
+func isExpired(s *Store, key string) bool {
+	exp, ok := s.ttl[key]
+	if !ok || exp == 0 {
+		return false
+	}
+	return exp <= time.Now().Unix()
 }
 
 // String commands
@@ -68,8 +102,14 @@ func getHandler(args []string) (string, error) {
 		return "", fmt.Errorf("missing argument for GET")
 	}
 	key := args[0]
-	DefaultStore.mu.RLock()
-	defer DefaultStore.mu.RUnlock()
+	DefaultStore.mu.Lock()
+	defer DefaultStore.mu.Unlock()
+	if isExpired(DefaultStore, key) {
+		delete(DefaultStore.data, key)
+		delete(DefaultStore.types, key)
+		delete(DefaultStore.ttl, key)
+		return "", nil
+	}
 	if DefaultStore.types[key] != StringType {
 		return "", nil
 	}
@@ -297,6 +337,7 @@ func delHandler(args []string) (string, error) {
 	_, existed := DefaultStore.data[key]
 	delete(DefaultStore.data, key)
 	delete(DefaultStore.types, key)
+	delete(DefaultStore.ttl, key)
 	if existed {
 		return "1", nil
 	}
@@ -308,11 +349,110 @@ func existsHandler(args []string) (string, error) {
 		return "0", fmt.Errorf("missing argument for EXISTS")
 	}
 	key := args[0]
-	DefaultStore.mu.RLock()
-	defer DefaultStore.mu.RUnlock()
+	DefaultStore.mu.Lock()
+	defer DefaultStore.mu.Unlock()
+	if isExpired(DefaultStore, key) {
+		delete(DefaultStore.data, key)
+		delete(DefaultStore.types, key)
+		delete(DefaultStore.ttl, key)
+		return "0", nil
+	}
 	_, ok := DefaultStore.data[key]
 	if ok {
 		return "1", nil
 	}
 	return "0", nil
+}
+
+func expireHandler(args []string) (string, error) {
+	if len(args) < 2 {
+		return "0", fmt.Errorf("missing argument for EXPIRE")
+	}
+	key := args[0]
+	secs := parseInt(args[1])
+	DefaultStore.mu.Lock()
+	defer DefaultStore.mu.Unlock()
+	if _, ok := DefaultStore.data[key]; !ok || isExpired(DefaultStore, key) {
+		return "0", nil
+	}
+	DefaultStore.ttl[key] = time.Now().Unix() + int64(secs)
+	return "1", nil
+}
+
+func ttlHandler(args []string) (string, error) {
+	if len(args) < 1 {
+		return "-2", fmt.Errorf("missing argument for TTL")
+	}
+	key := args[0]
+	DefaultStore.mu.Lock()
+	defer DefaultStore.mu.Unlock()
+	if _, ok := DefaultStore.data[key]; !ok || isExpired(DefaultStore, key) {
+		return "-2", nil
+	}
+	exp := DefaultStore.ttl[key]
+	if exp == 0 {
+		return "-1", nil
+	}
+	rem := exp - time.Now().Unix()
+	if rem < 0 {
+		return "-2", nil
+	}
+	return fmt.Sprintf("%d", rem), nil
+}
+
+func SaveSnapshot(filename string) error {
+	DefaultStore.mu.RLock()
+	defer DefaultStore.mu.RUnlock()
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	enc := gob.NewEncoder(f)
+	return enc.Encode(struct {
+		Data  map[string]any
+		Types map[string]valueType
+		TTL   map[string]int64
+	}{DefaultStore.data, DefaultStore.types, DefaultStore.ttl})
+}
+
+func LoadSnapshot(filename string) error {
+	f, err := os.Open(filename)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	var snap struct {
+		Data  map[string]any
+		Types map[string]valueType
+		TTL   map[string]int64
+	}
+	dec := gob.NewDecoder(f)
+	if err := dec.Decode(&snap); err != nil {
+		return err
+	}
+	DefaultStore.mu.Lock()
+	defer DefaultStore.mu.Unlock()
+	DefaultStore.data = snap.Data
+	DefaultStore.types = snap.Types
+	DefaultStore.ttl = snap.TTL
+	return nil
+}
+
+func snapshotHandler(args []string) (string, error) {
+	file := "dump.rdb"
+	if len(args) > 0 {
+		file = args[0]
+	}
+	err := SaveSnapshot(file)
+	if err != nil {
+		return "ERR " + err.Error(), nil
+	}
+	return "OK", nil
+}
+
+func init() {
+	gob.Register(map[string]struct{}{})
+	gob.Register([]string{})
+	gob.Register("")
 }

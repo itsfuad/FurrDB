@@ -4,12 +4,16 @@ import (
 	"fmt"
 	"os"
 
+	"furr/internal/db"
 	_ "furr/internal/handlers"
 	"furr/internal/repl"
 	"furr/internal/server"
 )
 
 func main() {
+	if _, err := os.Stat("dump.rdb"); err == nil {
+		db.LoadSnapshot("dump.rdb")
+	}
 	if len(os.Args) > 1 && os.Args[1] == "--repl" {
 		repl.Start()
 		return
