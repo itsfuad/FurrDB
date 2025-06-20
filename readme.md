@@ -2,6 +2,8 @@
 
 **FurrDB** is a minimal, Redis-inspired in-memory key-value store written in pure Go.
 
+![Cover](./cover.png)
+
 - **Persistent disk storage**
 - **Built-in script registration and execution (by hash)**
 - **Simple custom command protocol over TCP**
