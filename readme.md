@@ -96,12 +96,58 @@ furrdb/
 | `GET k`         | Get value of key `k`                        |
 | `DEL k`         | Delete key `k`                              |
 | `EXISTS k`      | Check if key exists                         |
+| `LPUSH k v [v..]` | Push value(s) to head of list             |
+| `RPUSH k v [v..]` | Push value(s) to tail of list             |
+| `LPOP k`        | Pop value from head of list                 |
+| `RPOP k`        | Pop value from tail of list                 |
+| `LRANGE k s e`  | Get list elements from s to e               |
+| `SADD k v [v..]`| Add value(s) to set                         |
+| `SREM k v [v..]`| Remove value(s) from set                    |
+| `SMEMBERS k`    | List all set members                        |
+| `KEYS`          | List all keys                               |
+| `FLUSHDB`       | Clear the database                          |
+| `INFO`          | Show server info/stats                      |
 | `PING`          | Responds with `PONG`                        |
 | `REGSCRIPT s`   | Register script `s`, returns hash           |
 | `RUNSCRIPT h`   | Run registered script by hash               |
 | `EVAL s`        | Evaluate script string without storing it   |
 | `SAVE`          | Force persistence flush                     |
 | `EXIT`          | Close the connection                        |
+
+### 📝 Command Examples
+
+#### String
+```
+SET foo bar
+GET foo
+DEL foo
+EXISTS foo
+```
+
+#### List
+```
+LPUSH mylist a b
+RPUSH mylist c
+t# mylist is now [b, a, c]
+LPOP mylist   # returns b
+RPOP mylist   # returns c
+LRANGE mylist 0 1  # returns a
+```
+
+#### Set
+```
+SADD myset x y z
+SMEMBERS myset   # returns x,y,z
+SREM myset y
+SMEMBERS myset   # returns x,z
+```
+
+#### Meta
+```
+KEYS        # returns all keys
+FLUSHDB     # clears the database
+INFO        # returns keys:<count>
+```
 
 ---
 

@@ -1,0 +1,45 @@
+# FurrDB all-commands demo script
+
+# String commands
+SET foo bar
+GET foo
+EXISTS foo
+DEL foo
+EXISTS foo
+
+# List commands
+LPUSH mylist a b
+RPUSH mylist c
+# mylist is now [b, a, c]
+LPOP mylist   # returns b
+RPOP mylist   # returns c
+LRANGE mylist 0 1  # returns a
+
+# Set commands
+SADD myset x y z
+SMEMBERS myset   # returns x,y,z
+SREM myset y
+SMEMBERS myset   # returns x,z
+
+# Meta commands
+KEYS
+INFO
+FLUSHDB
+KEYS
+INFO
+
+# Ping
+PING
+
+# Script registration and execution
+REGSCRIPT SET sfoo sval; GET sfoo
+# RUNSCRIPT <hash>  # Replace <hash> with actual hash from REGSCRIPT output
+
+# Eval script (not stored)
+EVAL SET efoo evaled; GET efoo
+
+# Persistence
+SAVE
+
+# Exit
+EXIT 

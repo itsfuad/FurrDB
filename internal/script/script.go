@@ -4,8 +4,9 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"furr/internal/db"
 	"strings"
+	
+	"furr/internal/db"
 )
 
 var scripts = make(map[string]string) // hash -> script
