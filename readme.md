@@ -197,27 +197,47 @@ GET foo
 
 ## 🚀 Getting Started
 
-### Build Server
+### 1. **Clone the Repository**
+```bash
+git clone https://github.com/itsfuad/FurrDB.git
+cd FurrDB
+```
 
+### 2. **Build the Server**
 ```bash
 go build -o furrdb ./cmd/furrdb
 ```
 
-### Run Server
-
+### 3. **Run the Server**
 ```bash
 ./furrdb
 ```
-Server runs on `localhost:7070` by default.
+The server will start on `localhost:7070` by default.
 
-### Use Client
-
+### 4. **Use the REPL (Interactive Shell)**
 ```bash
-go run ./client
+go run ./cmd/furrdb --repl
 ```
-Or connect manually:
+Type commands directly, or use `HELP` for a list of commands.
+
+### 5. **Use the CLI Client to Run Scripts**
+```bash
+go run ./cmd/furrdbcli scripts/all_commands.txt
+```
+Or connect manually with telnet:
 ```bash
 telnet localhost 7070
+```
+
+### 6. **Using Release Binaries**
+- Download the latest release from the [GitHub Releases page](https://github.com/itsfuad/FurrDB/releases).
+- Extract and run the binary for your OS:
+  - `furrdb` (server)
+  - `furrdbcli` (CLI client)
+
+### 7. **Run Tests**
+```bash
+go test ./...
 ```
 
 ---
