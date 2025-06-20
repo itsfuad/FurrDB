@@ -5,20 +5,12 @@ on:
     workflows: ["CI"]
     types:
       - completed
-  push:
     branches:
       - stable
-    tags:
-      - v*
-
-permissions:
-  contents: write
 
 jobs:
   release:
-    if: |
-      (github.event.workflow_run.conclusion == 'success' && github.event_name == 'workflow_run') ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -35,19 +27,10 @@ jobs:
         with:
           go-version: '1.23'
 
-      - name: Check formatting (go fmt)
-        run: |
-          out=$(go fmt ./...)
-          if [ -n "$out" ]; then
-            echo "The following files are not gofmt'ed:" >&2
-            echo "$out" >&2
-            exit 1
-          fi
-
       - name: Build for Multiple Platforms
         run: |
           mkdir -p releases
-          PLATFORMS=("windows/amd64" "linux/amd64" "darwin/amd64" "darwin/arm64")
+          PLATFORMS=("windows/amd64" "linux/amd64" "linux/arm64" "darwin/amd64" "darwin/arm64")
           for platform in "${PLATFORMS[@]}"; do
             OS=${platform%/*}
             ARCH=${platform#*/}
@@ -74,4 +57,4 @@ jobs:
           files: |
             releases/*
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
