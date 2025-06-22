@@ -57,7 +57,7 @@ var Commands = map[string]HandlerFunc{
 	"INFO":     infoHandler,
 	"EXPIRE":   expireHandler,
 	"TTL":      ttlHandler,
-	"SAVE": 	snapshotHandler,
+	"SAVE":     snapshotHandler,
 }
 
 func (s *Store) ttlCleaner() {
