@@ -30,7 +30,7 @@ func evalHandler(args []string) (string, error) {
 		return "", fmt.Errorf("missing argument for EVAL")
 	}
 	scriptStr := strings.Join(args, " ")
-	return script.EvalScript(scriptStr, nil)
+	return script.EvalScript(scriptStr)
 }
 
 func init() {

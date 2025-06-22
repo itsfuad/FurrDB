@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 
 	"furr/internal/db"
@@ -30,39 +29,32 @@ func Start() {
 		}
 		cmd := strings.ToUpper(tokens[0])
 		args := tokens[1:]
-		if cmd == "EXIT" {
+		switch cmd {
+		case "EXIT":
 			fmt.Println("bye!")
 			return
-		}
-		if cmd == "HELP" {
+		case "HELP":
 			printHelp()
-			continue
-		}
-		if cmd == "CLEAR" {
+		case "CLEAR":
 			clearScreen()
-			continue
+		default:
+			handler, ok := db.Commands[cmd]
+			if !ok {
+				fmt.Println("ERR unknown command")
+				continue
+			}
+			result, err := handler(args)
+			if err != nil {
+				fmt.Println("ERR", err)
+				continue
+			}
+			fmt.Println(result)
 		}
-		handler, ok := db.Commands[cmd]
-		if !ok {
-			fmt.Println("ERR unknown command")
-			continue
-		}
-		result, err := handler(args)
-		if err != nil {
-			fmt.Println("ERR", err)
-			continue
-		}
-		fmt.Println(result)
 	}
 }
 
 func clearScreen() {
-	if runtime.GOOS == "windows" {
-		fmt.Print("\033[2J\033[H") // ANSI clear for modern Windows terminals
-		// Optionally, use syscall for legacy cmd.exe, but most support ANSI now
-	} else {
-		fmt.Print("\033[2J\033[H") // ANSI escape codes for Unix
-	}
+	fmt.Print("\033[2J\033[H") // ANSI escape code
 }
 
 func printHelp() {

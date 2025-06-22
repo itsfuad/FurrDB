@@ -20,7 +20,7 @@ func TestRegisterAndRunScript(t *testing.T) {
 }
 
 func TestEvalScript(t *testing.T) {
-	res, err := EvalScript("SET baz qux; GET baz", nil)
+	res, err := EvalScript("SET baz qux; GET baz")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,10 +29,10 @@ func TestEvalScript(t *testing.T) {
 	}
 }
 
-func TestScriptDSL_LetIfEnd(t *testing.T) {
+func TestScriptDSLLetIfEnd(t *testing.T) {
 	scriptStr := `LET x = GET foo; IF x == bar; SET foo baz; END; GET foo`
 	_, _ = db.Commands["SET"]([]string{"foo", "bar"})
-	res, err := EvalScript(scriptStr, nil)
+	res, err := EvalScript(scriptStr)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -41,18 +41,18 @@ func TestScriptDSL_LetIfEnd(t *testing.T) {
 	}
 }
 
-func TestScriptDSL_Sandbox(t *testing.T) {
+func TestScriptDSLSandbox(t *testing.T) {
 	scriptStr := `FLUSHDB; GET foo`
 	_, _ = db.Commands["SET"]([]string{"foo", "bar"})
-	_, err := EvalScript(scriptStr, nil)
+	_, err := EvalScript(scriptStr)
 	if err == nil || err.Error() != "ERR command FLUSHDB not allowed in script on line 1" {
 		t.Errorf("expected sandbox error, got %v", err)
 	}
 }
 
-func TestScriptDSL_LetSyntaxError(t *testing.T) {
+func TestScriptDSLLetSyntaxError(t *testing.T) {
 	scriptStr := `LET x GET foo`
-	_, err := EvalScript(scriptStr, nil)
+	_, err := EvalScript(scriptStr)
 	if err == nil || err.Error() != "ERR invalid LET syntax on line 1" {
 		t.Errorf("expected LET syntax error, got %v", err)
 	}
