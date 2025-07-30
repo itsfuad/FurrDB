@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"furr/internal/db"
-	_ "furr/internal/handlers"
 	"furr/internal/repl"
 	"furr/internal/server"
 )
