@@ -71,13 +71,47 @@ func TestListCommands(t *testing.T) {
 	}
 }
 
+func TestNewListCommands(t *testing.T) {
+	DefaultStore = NewStore()
+	_, _ = lpushHandler([]string{"testlist", "a", "b", "c"}) // c, b, a
+
+	// Test LGET - get all elements
+	out, _ := lgetHandler([]string{"testlist"})
+	if out != "c,b,a" {
+		t.Errorf("expected c,b,a, got %s", out)
+	}
+
+	// Test LLEN - get length
+	length, _ := llengHandler([]string{"testlist"})
+	if length != "3" {
+		t.Errorf("expected 3, got %s", length)
+	}
+
+	// Test with non-existent list
+	out, _ = lgetHandler([]string{"nonexistent"})
+	if out != "" {
+		t.Errorf("expected empty string for non-existent list, got %s", out)
+	}
+
+	length, _ = llengHandler([]string{"nonexistent"})
+	if length != "0" {
+		t.Errorf("expected 0 for non-existent list, got %s", length)
+	}
+}
+
 func TestSetCommands(t *testing.T) {
 	DefaultStore = NewStore()
 	_, _ = saddHandler([]string{"myset", "a", "b", "c"})
 	_, _ = sremHandler([]string{"myset", "b"})
-	out, _ := smembersHandler([]string{"myset"})
+	out, _ := sgetHandler([]string{"myset"})
 	if !strings.Contains(out, "a") || !strings.Contains(out, "c") || strings.Contains(out, "b") {
 		t.Errorf("expected a and c, not b; got %s", out)
+	}
+
+	// Test SGET with non-existent set
+	out2, _ := sgetHandler([]string{"nonexistent"})
+	if out2 != "" {
+		t.Errorf("expected empty string for non-existent set, got %s", out2)
 	}
 }
 
@@ -151,7 +185,7 @@ func TestSnapshotSaveLoad(t *testing.T) {
 	if val != "snapval" {
 		t.Errorf("expected snapval after load, got %s", val)
 	}
-	members, _ := smembersHandler([]string{"snapset"})
+	members, _ := sgetHandler([]string{"snapset"})
 	if !(strings.Contains(members, "a") && strings.Contains(members, "b")) {
 		t.Errorf("expected set members a and b, got %s", members)
 	}
