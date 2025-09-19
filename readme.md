@@ -83,9 +83,11 @@
 | `LPOP k`        | Pop value from head of list                 |
 | `RPOP k`        | Pop value from tail of list                 |
 | `LRANGE k s e`  | Get list elements from s to e               |
+| `LGET k`        | Get all list elements                        |
+| `LLEN k`        | Get list length                              |
 | `SADD k v [v..]`| Add value(s) to set                         |
 | `SREM k v [v..]`| Remove value(s) from set                    |
-| `SMEMBERS k`    | List all set members                        |
+| `SGET k`        | Get all set members                          |
 | `KEYS`          | List all keys                               |
 | `FLUSHDB`       | Clear the database                          |
 | `INFO`          | Show server info/stats                      |
@@ -114,12 +116,14 @@ t# mylist is now [b, a, c]
 LPOP mylist   # returns b
 RPOP mylist   # returns c
 LRANGE mylist 0 1  # returns a
+LGET mylist       # returns all elements: a
+LLEN mylist       # returns length: 1
 ```
 
 #### Set
 ```
 SADD myset x y z
-SMEMBERS myset   # returns x,y,z
+SGET myset       # returns x,y,z
 SREM myset y
 SMEMBERS myset   # returns x,z
 ```

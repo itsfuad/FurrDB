@@ -40,24 +40,26 @@ var DefaultStore = NewStore()
 type HandlerFunc func(args []string) (string, error)
 
 var Commands = map[string]HandlerFunc{
-	"SET":      setHandler,
-	"GET":      getHandler,
-	"DEL":      delHandler,
-	"EXISTS":   existsHandler,
-	"LPUSH":    lpushHandler,
-	"RPUSH":    rpushHandler,
-	"LPOP":     lpopHandler,
-	"RPOP":     rpopHandler,
-	"LRANGE":   lrangeHandler,
-	"SADD":     saddHandler,
-	"SREM":     sremHandler,
-	"SMEMBERS": smembersHandler,
-	"KEYS":     keysHandler,
-	"FLUSHDB":  flushdbHandler,
-	"INFO":     infoHandler,
-	"EXPIRE":   expireHandler,
-	"TTL":      ttlHandler,
-	"SAVE":     snapshotHandler,
+	"SET":     setHandler,
+	"GET":     getHandler,
+	"DEL":     delHandler,
+	"EXISTS":  existsHandler,
+	"LPUSH":   lpushHandler,
+	"RPUSH":   rpushHandler,
+	"LPOP":    lpopHandler,
+	"RPOP":    rpopHandler,
+	"LRANGE":  lrangeHandler,
+	"LGET":    lgetHandler,
+	"LLEN":    llengHandler,
+	"SADD":    saddHandler,
+	"SREM":    sremHandler,
+	"SGET":    sgetHandler,
+	"KEYS":    keysHandler,
+	"FLUSHDB": flushdbHandler,
+	"INFO":    infoHandler,
+	"EXPIRE":  expireHandler,
+	"TTL":     ttlHandler,
+	"SAVE":    snapshotHandler,
 }
 
 func (s *Store) ttlCleaner() {
@@ -224,6 +226,34 @@ func lrangeHandler(args []string) (string, error) {
 	return strings.Join(lst[start:end+1], ","), nil
 }
 
+func lgetHandler(args []string) (string, error) {
+	if len(args) < 1 {
+		return "", fmt.Errorf("missing argument for LGET")
+	}
+	key := args[0]
+	DefaultStore.mu.RLock()
+	defer DefaultStore.mu.RUnlock()
+	if DefaultStore.types[key] != ListType {
+		return "", nil
+	}
+	lst := DefaultStore.data[key].([]string)
+	return strings.Join(lst, ","), nil
+}
+
+func llengHandler(args []string) (string, error) {
+	if len(args) < 1 {
+		return "", fmt.Errorf("missing argument for LLEN")
+	}
+	key := args[0]
+	DefaultStore.mu.RLock()
+	defer DefaultStore.mu.RUnlock()
+	if DefaultStore.types[key] != ListType {
+		return "0", nil
+	}
+	lst := DefaultStore.data[key].([]string)
+	return fmt.Sprintf("%d", len(lst)), nil
+}
+
 // Set commands
 func saddHandler(args []string) (string, error) {
 	if len(args) < 2 {
@@ -270,9 +300,9 @@ func sremHandler(args []string) (string, error) {
 	return fmt.Sprintf("%d", removed), nil
 }
 
-func smembersHandler(args []string) (string, error) {
+func sgetHandler(args []string) (string, error) {
 	if len(args) < 1 {
-		return "", fmt.Errorf("missing argument for SMEMBERS")
+		return "", fmt.Errorf("missing argument for SGET")
 	}
 	key := args[0]
 	DefaultStore.mu.RLock()

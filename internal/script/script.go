@@ -37,8 +37,8 @@ func EvalScript(script string) (string, error) {
 func getWhitelist() map[string]bool {
 	return map[string]bool{
 		"SET": true, "GET": true, "DEL": true, "EXISTS": true,
-		"LPUSH": true, "RPUSH": true, "LPOP": true, "RPOP": true, "LRANGE": true,
-		"SADD": true, "SREM": true, "SMEMBERS": true,
+		"LPUSH": true, "RPUSH": true, "LPOP": true, "RPOP": true, "LRANGE": true, "LGET": true, "LLEN": true,
+		"SADD": true, "SREM": true, "SGET": true,
 	}
 }
 
